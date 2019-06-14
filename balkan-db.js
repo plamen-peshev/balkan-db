@@ -202,19 +202,7 @@ function guard(p) {
 }
 
 
-var bdb = new balkanDB('balkan-db');
-bdb.set('d', 'f', {sss:34}, function(err){
-    console.log(err);
-
-    bdb.get('d', 'f',  function(err, json){
-        console.log(err);
-        console.log(json);
-    });
-});
-
-// bdb.del('d', 'f',  function(err){
-//     console.log(err);
-// });
+module.exports = balkanDB;
 
 
 
