@@ -2,8 +2,9 @@
 var fs = require('fs');
 var path = require('path');
 
-var balkanDB = function(root) {
+var balkanDB = function(base, root) {
     this.root = root;
+    this.base = base;
 };
 
 balkanDB.prototype.get = function(dir, file, callback){
@@ -14,7 +15,7 @@ balkanDB.prototype.get = function(dir, file, callback){
     }
 
     var interval = setInterval(get, 500);
-    var index = 0;
+    var index = 0;    
 
     function get(){
         fs.open(b.path, 'r+', function(err, fd){
@@ -46,6 +47,7 @@ balkanDB.prototype.get = function(dir, file, callback){
             }
         });
     }
+    get();
 };
 
 balkanDB.prototype.set = function(dir, file, json, callback){
@@ -86,6 +88,7 @@ balkanDB.prototype.set = function(dir, file, json, callback){
             }
         });
     }
+    set();
 };
 
 balkanDB.prototype.del = function(dir, file, callback){
@@ -123,6 +126,7 @@ balkanDB.prototype.del = function(dir, file, callback){
             }
         });
     }
+    del();
 };
 
 
@@ -139,7 +143,7 @@ balkanDB.prototype.build = function(dir, file, json){
         }
     }
 
-    var dir1 = path.join(__dirname, this.root);
+    var dir1 = path.join(this.base, this.root);
     if (!fs.existsSync(dir1)){
         fs.mkdirSync(dir1);
     }
@@ -153,7 +157,7 @@ balkanDB.prototype.build = function(dir, file, json){
         dir: dir.toLowerCase(),
         file: file.toLowerCase(),        
         json: (json != undefined) ? JSON.stringify(json) : null,
-        path: path.join(__dirname, this.root, dir, `${file}.json`)
+        path: path.join(this.base, this.root, dir, `${file}.json`)
     }
 };
 
