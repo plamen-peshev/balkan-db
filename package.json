@@ -1,0 +1,25 @@
+{
+    "author": {
+        "name": "BALKANGraph"
+    },
+    "bugs": {
+        "email": "support@balkangraph.com",
+        "url": "https://github.com/plamen-peshev/balkan-db/issues"
+    },
+    "files": [
+        "balkan-db.js",
+        "README.md"
+    ],
+    "homepage": "https://balkangraph.com/",
+    "keywords": [
+        "databse",
+        "file"
+    ],
+    "main": "app.js",
+    "name": "@balkangraph/balkan-db",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/plamen-peshev/balkan-db"
+    },
+    "version": "1.0.0",
+}
