@@ -10,7 +10,7 @@ var balkanDB = function(base, root) {
 balkanDB.prototype.get = function(dir, file, callback){
     var b = this.build(dir, file);
     if (b.err){
-        callback('Not valid path')
+        callback(b.err)
         return;
     }
 
@@ -53,7 +53,7 @@ balkanDB.prototype.get = function(dir, file, callback){
 balkanDB.prototype.set = function(dir, file, json, callback){
     var b = this.build(dir, file, json);
     if (b.err){
-        callback('Not valid path')
+        callback(b.err)
         return;
     }
 
@@ -94,7 +94,7 @@ balkanDB.prototype.set = function(dir, file, json, callback){
 balkanDB.prototype.del = function(dir, file, callback){
     var b = this.build(dir, file);
     if (b.err){
-        callback('Not valid path')
+        callback(b.err)
         return;
     }
 
@@ -133,13 +133,13 @@ balkanDB.prototype.del = function(dir, file, callback){
 balkanDB.prototype.build = function(dir, file, json){
     if (!guard(dir)){
         return {
-            err: 'Not valid dir name'
+            err: `The text "${dir}" has invalid characters`
         }
     }
 
     if (!guard(file)){
         return {
-            err: 'Not valid file name'
+            err: `The text "${file}" has invalid characters`
         }
     }
 
