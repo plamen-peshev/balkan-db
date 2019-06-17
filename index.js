@@ -137,7 +137,7 @@ balkanDB.prototype.build = function(dir, file, json){
         }
     }
 
-    if (!guard(dir)){
+    if (!guard(file)){
         return {
             err: 'Not valid file name'
         }
