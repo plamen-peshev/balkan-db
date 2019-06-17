@@ -162,6 +162,8 @@ balkanDB.prototype.build = function(dir, file, json){
 };
 
 
+
+
 function guard(p) {
     if (p == '')
         return false;
@@ -170,6 +172,12 @@ function guard(p) {
         return false;
             
     if (p == undefined)
+        return false;
+
+    if (p == 'null')
+        return false;
+            
+    if (p == 'undefined')
         return false;
 
     if (typeof p != 'string')
