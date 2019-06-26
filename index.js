@@ -130,6 +130,28 @@ balkanDB.prototype.del = function(dir, file, callback){
 };
 
 
+balkanDB.prototype.list = function(dir, callback){
+    var b = this.build(dir, 'dummy');
+    if (b.err){
+        callback(b.err)
+        return;
+    }
+
+    const testFolder = './tests/';
+    const fs = require('fs');
+
+    fs.readdir(b.dirPath, (err, files) => {
+
+        for(var i = 0; i < files.length; i++){
+            files[i] = files[i].replace('.json', '');
+        }
+
+
+        callback(err, files);
+    });
+};
+
+
 balkanDB.prototype.build = function(dir, file, json){
     if (!guard(dir)){
         return {
@@ -157,7 +179,8 @@ balkanDB.prototype.build = function(dir, file, json){
         dir: dir.toLowerCase(),
         file: file.toLowerCase(),        
         json: (json != undefined) ? JSON.stringify(json) : null,
-        path: path.join(this.base, this.root, dir, `${file}.json`)
+        path: path.join(this.base, this.root, dir, `${file}.json`),
+        dirPath: path.join(this.base, this.root, dir)
     }
 };
 
