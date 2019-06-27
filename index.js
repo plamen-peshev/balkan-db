@@ -5,10 +5,12 @@ var path = require('path');
 var balkanDB = function(base, root) {
     this.root = root;
     this.base = base;
+    error.init(root, base);
 };
 
 balkanDB.prototype.get = function(dir, file, callback){
-    var b = this.build(dir, file);
+    var b = this.build(dir, file);    
+    error.log(b.err);
     if (b.err){
         callback(b.err)
         return;
@@ -18,8 +20,9 @@ balkanDB.prototype.get = function(dir, file, callback){
     var index = 0;    
 
     function get(){
-        fs.open(b.path, 'r+', function(err, fd){
-            if (err && err.code === 'EBUSY'){
+        fs.open(b.path, 'r+', function(err, fd){            
+            error.log(err);
+            if (err && err.code === 'EBUSY'){                
                 index++;
                 if (index == 10){
                     clearInterval(interval);
@@ -36,6 +39,7 @@ balkanDB.prototype.get = function(dir, file, callback){
 
                 fs.close(fd, function(){
                     fs.readFile(b.path, function(err, data){
+                        error.log(err);
                         if (err) callback(err);
                         var result = null;
                         if (data != null && data != undefined){
@@ -52,7 +56,8 @@ balkanDB.prototype.get = function(dir, file, callback){
 
 balkanDB.prototype.set = function(dir, file, json, callback){
     var b = this.build(dir, file, json);
-    if (b.err){
+    error.log(b.err);
+    if (b.err){        
         callback(b.err)
         return;
     }
@@ -62,6 +67,8 @@ balkanDB.prototype.set = function(dir, file, json, callback){
 
     function set(){
         fs.open(b.path, 'r+', function(err, fd){
+            error.log(err);
+
             if (err && err.code === 'EBUSY'){
                 index++;
                 if (index == 10){
@@ -73,6 +80,7 @@ balkanDB.prototype.set = function(dir, file, json, callback){
             else if (err && err.code === 'ENOENT'){
                 clearInterval(interval);
                 fs.writeFile(b.path, b.json, function (err) {
+                    error.log(err);
                     if (err) callback(err);
                     callback(null);
                 });              
@@ -81,6 +89,7 @@ balkanDB.prototype.set = function(dir, file, json, callback){
                 clearInterval(interval);
                 fs.close(fd, function(){
                     fs.writeFile(b.path, b.json, function (err) {
+                        error.log(err);
                         if (err) callback(err);
                         callback(null);
                     });
@@ -93,6 +102,7 @@ balkanDB.prototype.set = function(dir, file, json, callback){
 
 balkanDB.prototype.del = function(dir, file, callback){
     var b = this.build(dir, file);
+    error.log(b.err);
     if (b.err){
         callback(b.err)
         return;
@@ -103,6 +113,8 @@ balkanDB.prototype.del = function(dir, file, callback){
 
     function del(){
         fs.open(b.path, 'r+', function(err, fd){
+            error.log(err);
+
             if (err && err.code === 'EBUSY'){
                 index++;
                 if (index == 10){
@@ -119,6 +131,7 @@ balkanDB.prototype.del = function(dir, file, callback){
                 clearInterval(interval);
                 fs.close(fd, function(){
                     fs.unlink(b.path, function(err){
+                        error.log(err);
                         if(err) callback(err);                        
                         callback(null);                        
                     });
@@ -132,21 +145,19 @@ balkanDB.prototype.del = function(dir, file, callback){
 
 balkanDB.prototype.list = function(dir, callback){
     var b = this.build(dir, 'dummy');
+    error.log(b.err);
     if (b.err){
         callback(b.err)
         return;
     }
 
-    const testFolder = './tests/';
     const fs = require('fs');
 
     fs.readdir(b.dirPath, (err, files) => {
-
+        error.log(err);
         for(var i = 0; i < files.length; i++){
             files[i] = files[i].replace('.json', '');
         }
-
-
         callback(err, files);
     });
 };
@@ -184,7 +195,25 @@ balkanDB.prototype.build = function(dir, file, json){
     }
 };
 
+var error = {};
+error.init = function(root, base){
+    error.base = base;
+    error.root = root;
+};
 
+error.log = function(err){
+    if (err){
+        try{
+            var p = path.join(error.base, error.root, 'errors.txt');
+            if (typeof(err) != 'string'){
+                err = JSON.stringify(err);            
+            }
+            fs.appendFile(p, new Date() + ' ERROR: ' + err + '\n', encoding='utf8', function (err) {});
+        }
+        catch{
+        }
+    }  
+};
 
 
 function guard(p) {
