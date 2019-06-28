@@ -13,7 +13,7 @@ var db = new fff(__dirname, 'db');
 // });
 
 
-db.set('asdfas1df33', 'asdfa32>3ds2', {}, function(err){
+db.set('asdfas1df33', 'asdfa32ds2', {}, function(err){
     console.log(err)
 });
 
