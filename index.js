@@ -20,11 +20,11 @@ balkanDB.prototype.get = function(dir, file, callback){
     var index = 0;    
 
     function get(){
-        fs.open(b.path, 'r+', function(err, fd){            
-            error.log(err);
+        fs.open(b.path, 'r+', function(err, fd){                        
             if (err && err.code === 'EBUSY'){                
                 index++;
                 if (index == 10){
+                    error.log(err);
                     clearInterval(interval);
                     callback('Cannot delete file ' + b.path);                                    
                 }
@@ -34,7 +34,8 @@ balkanDB.prototype.get = function(dir, file, callback){
                 clearInterval(interval);
                 callback(null, null);               
             } 
-            else {
+            else {                
+                error.log(err);
                 clearInterval(interval);
 
                 fs.close(fd, function(){
@@ -66,12 +67,11 @@ balkanDB.prototype.set = function(dir, file, json, callback){
     var index = 0;
 
     function set(){
-        fs.open(b.path, 'r+', function(err, fd){
-            error.log(err);
-
+        fs.open(b.path, 'r+', function(err, fd){           
             if (err && err.code === 'EBUSY'){
                 index++;
-                if (index == 10){
+                if (index == 10){                    
+                    error.log(err);
                     clearInterval(interval);
                     callback('Cannot delete file ' + b.path);                                    
                 }
@@ -85,7 +85,8 @@ balkanDB.prototype.set = function(dir, file, json, callback){
                     callback(null);
                 });              
             } 
-            else {
+            else {                
+                error.log(err);
                 clearInterval(interval);
                 fs.close(fd, function(){
                     fs.writeFile(b.path, b.json, function (err) {
@@ -113,11 +114,11 @@ balkanDB.prototype.del = function(dir, file, callback){
 
     function del(){
         fs.open(b.path, 'r+', function(err, fd){
-            error.log(err);
 
             if (err && err.code === 'EBUSY'){
                 index++;
                 if (index == 10){
+                    error.log(err);
                     clearInterval(interval);
                     callback('Cannot delete file ' + b.path);                                    
                 }
@@ -127,7 +128,8 @@ balkanDB.prototype.del = function(dir, file, callback){
                 clearInterval(interval);
                 callback(null);                
             } 
-            else {
+            else {                
+                error.log(err);
                 clearInterval(interval);
                 fs.close(fd, function(){
                     fs.unlink(b.path, function(err){

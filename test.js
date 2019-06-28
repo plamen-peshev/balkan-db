@@ -13,14 +13,13 @@ var db = new fff(__dirname, 'db');
 // });
 
 
-// db.set('asdfasdf', 'asdfads2', {}, function(err){
-//     console.log(err)
-
-// });
-
-db.set('templates', 'asdf>aяоаds - 13', {}, function(err){
-    db.list('templates', function(err, files){
-        console.log(files)
-    });
+db.set('asdfas1df33', 'asdfa32>3ds2', {}, function(err){
+    console.log(err)
 });
+
+// db.set('templates', 'asdf>aяоаds - 13', {}, function(err){
+//     db.list('templates', function(err, files){
+//         console.log(files)
+//     });
+// });
 
