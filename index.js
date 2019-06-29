@@ -2,10 +2,19 @@
 var fs = require('fs');
 var path = require('path');
 
-var balkanDB = function(base, root) {
-    this.root = root;
-    this.base = base;
-    error.init(root, base);
+var balkanDB = function() {
+
+    var p = path.join(arguments[0], arguments[1]);
+    for(var i = 2; i < arguments.length; i++){
+        p = path.join(p, arguments[i]);
+    }
+    this.root = p;
+
+    if (!fs.existsSync(this.root)){
+        fs.mkdirSync(this.root, { recursive: true });
+    }
+
+    error.init(this.root);
 };
 
 balkanDB.prototype.get = function(dir, file, callback){
@@ -16,11 +25,10 @@ balkanDB.prototype.get = function(dir, file, callback){
         return;
     }
 
-    var interval = setInterval(get, 500);
     var index = 0;    
 
     function get(){
-        fs.open(b.path, 'r+', function(err, fd){                        
+        fs.open(b.path, 'r+', function(err, fd){    
             if (err && err.code === 'EBUSY'){                
                 index++;
                 if (index == 10){
@@ -52,7 +60,14 @@ balkanDB.prototype.get = function(dir, file, callback){
             }
         });
     }
-    get();
+
+    if (fs.existsSync(b.path)){
+        var interval = setInterval(get, 500);
+        get();
+    }
+    else{
+        callback(null, null);                       
+    }
 };
 
 balkanDB.prototype.set = function(dir, file, json, callback){
@@ -61,9 +76,12 @@ balkanDB.prototype.set = function(dir, file, json, callback){
     if (b.err){        
         callback(b.err)
         return;
+    }    
+
+    if (!fs.existsSync(b.dirPath)){
+        fs.mkdirSync(b.dirPath);
     }
 
-    var interval = setInterval(set, 500);
     var index = 0;
 
     function set(){
@@ -98,6 +116,8 @@ balkanDB.prototype.set = function(dir, file, json, callback){
             }
         });
     }
+    
+    var interval = setInterval(set, 500);
     set();
 };
 
@@ -109,7 +129,7 @@ balkanDB.prototype.del = function(dir, file, callback){
         return;
     }
 
-    var interval = setInterval(del, 500);
+
     var index = 0;
 
     function del(){
@@ -141,7 +161,11 @@ balkanDB.prototype.del = function(dir, file, callback){
             }
         });
     }
-    del();
+    
+    if (fs.existsSync(b.path)){        
+        var interval = setInterval(del, 500);
+        del();
+    }
 };
 
 
@@ -178,35 +202,24 @@ balkanDB.prototype.build = function(dir, file, json){
         }
     }
 
-    var dir1 = path.join(this.base, this.root);
-    if (!fs.existsSync(dir1)){
-        fs.mkdirSync(dir1);
-    }
-    
-    var dir2 = path.join(dir1, dir);
-    if (!fs.existsSync(dir2)){
-        fs.mkdirSync(dir2);
-    }
-
     return{
         dir: dir.toLowerCase(),
         file: file.toLowerCase(),        
         json: (json != undefined) ? JSON.stringify(json) : null,
-        path: path.join(this.base, this.root, dir, `${file}.json`),
-        dirPath: path.join(this.base, this.root, dir)
+        path: path.join(this.root, dir, `${file}.json`),
+        dirPath: path.join(this.root, dir)
     }
 };
 
 var error = {};
-error.init = function(root, base){
-    error.base = base;
+error.init = function(root){
     error.root = root;
 };
 
 error.log = function(err){
     if (err){
         try{
-            var p = path.join(error.base, error.root, 'errors.txt');
+            var p = path.join(error.root, 'errors.txt');
             if (typeof(err) != 'string'){
                 err = JSON.stringify(err);            
             }
