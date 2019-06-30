@@ -23,7 +23,7 @@ var db = new fff(__dirname, 'db', 's', 't', 'e');
 //     });
 // });
 
-db.get('55555', '2222', function(err, data){
+db.list('2222', function(err, data){
     console.log(err)
     console.log(data)
 });

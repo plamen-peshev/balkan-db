@@ -179,13 +179,23 @@ balkanDB.prototype.list = function(dir, callback){
 
     const fs = require('fs');
 
-    fs.readdir(b.dirPath, (err, files) => {
-        error.log(err);
-        for(var i = 0; i < files.length; i++){
-            files[i] = files[i].replace('.json', '');
-        }
-        callback(err, files);
-    });
+    if (fs.existsSync(b.dirPath)){        
+        fs.readdir(b.dirPath, (err, files) => {
+            error.log(err);
+            if (files && Array.isArray(files)){
+                for(var i = 0; i < files.length; i++){
+                    files[i] = files[i].replace('.json', '');
+                }
+                callback(err, files);
+            }
+            else{
+                callback(err, []);
+            }
+        });
+    }
+    else{
+        callback(null, []);
+    }
 };
 
 
