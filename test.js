@@ -23,8 +23,6 @@ var db = new fff(__dirname, 'db', 's', 't', 'e');
 //     });
 // });
 
-db.list('2222', function(err, data){
-    console.log(err)
-    console.log(data)
-});
+
+console.log(db.exist('asdfas1df33', 'asdfa32ds2'));
 

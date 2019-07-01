@@ -177,7 +177,6 @@ balkanDB.prototype.list = function(dir, callback){
         return;
     }
 
-    const fs = require('fs');
 
     if (fs.existsSync(b.dirPath)){        
         fs.readdir(b.dirPath, (err, files) => {
@@ -195,6 +194,30 @@ balkanDB.prototype.list = function(dir, callback){
     }
     else{
         callback(null, []);
+    }
+};
+
+
+
+balkanDB.prototype.exist = function(dir, file){
+    var checkOnlyDir = false;
+
+    if (file == undefined){
+        checkOnlyDir = true;
+        file = 'dummy';
+    }
+    
+    var b = this.build(dir, file);
+    error.log(b.err);
+    if (b.err){
+        return false;
+    }
+
+    if (checkOnlyDir){        
+        return fs.existsSync(b.dirPath);
+    }
+    else{
+        return fs.existsSync(b.path);
     }
 };
 
