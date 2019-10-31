@@ -70,6 +70,31 @@ balkanDB.prototype.get = function(dir, file, callback){
     }
 };
 
+
+balkanDB.prototype.setAutoIncrement = function(dir, json, callback){
+    var that = this;
+    this.get(dir, '_system', function(err, system){
+        error.log(err);
+
+        if (system == null){
+            system = {
+                last_index_auto_increment: 0
+            }
+        }
+
+        system.last_index_auto_increment++;
+
+        that.set(dir, '_system', system, function(err){
+            error.log(err);
+        });
+
+        that.set(dir, system.last_index_auto_increment.toString(), json, function(err){
+            error.log(err);
+            callback(err);
+        });
+    });
+};
+
 balkanDB.prototype.set = function(dir, file, json, callback){
     var b = this.build(dir, file, json);
     error.log(b.err);
