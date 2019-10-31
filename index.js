@@ -88,6 +88,7 @@ balkanDB.prototype.setAutoIncrement = function(dir, json, callback){
             error.log(err);
         });
 
+        json.id = system.last_index_auto_increment;
         that.set(dir, system.last_index_auto_increment.toString(), json, function(err){
             error.log(err);
             callback(err);
