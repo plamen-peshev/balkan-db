@@ -23,9 +23,11 @@ var db = new fff(__dirname, 'db', 's', 't', 'e');
 //     });
 // });
 
-db.setAutoIncrement('55555', {fuck: 2345}, function(err){
-    console.log(db.exist('asdfas1df33', 'asdfa32ds2'));
+db.get('55555', ['2341' , '2'], function(err, data){
+    console.log(data);
 })
+
+
 
 
 

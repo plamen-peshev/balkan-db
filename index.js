@@ -18,6 +18,42 @@ var balkanDB = function() {
 };
 
 balkanDB.prototype.get = function(dir, file, callback){
+    var that = this;
+    if (Array.isArray(file)){
+        var result = [];
+        var errs = [];
+        if (file.length == 0) {
+            callback(null, []);
+            return;
+        } 
+
+        var index = 0;  
+        
+        for(var i = 0; i < file.length; i++){          
+            (function(_i){
+                var f = file[_i];
+                that._get(dir, f, function(err, data){                    
+                    error.log(err);
+                    if (err) errs[_i] = errs;
+                    result[_i] = data;                    
+
+                    index++;
+
+                    if (index == file.length){
+                        if (errs.length == 0) errs = null;
+                        callback(errs, result);
+                    }
+                });
+            })(i);            
+        }
+    }
+    else{
+        this._get(dir, file, callback);
+    }
+};2
+
+
+balkanDB.prototype._get = function(dir, file, callback){
     var b = this.build(dir, file);    
     error.log(b.err);
     if (b.err){
@@ -248,7 +284,7 @@ balkanDB.prototype.exist = function(dir, file){
 };
 
 
-balkanDB.prototype.build = function(dir, file, json){
+balkanDB.prototype.build = function(dir, file, json){    
     if (!guard(dir)){
         return {
             err: `The text "${dir}" has invalid characters`
@@ -260,6 +296,9 @@ balkanDB.prototype.build = function(dir, file, json){
             err: `The text "${file}" has invalid characters`
         }
     }
+
+    dir = dir.toString();
+    file = file.toString();
 
     return{
         dir: dir.toLowerCase(),
@@ -278,7 +317,7 @@ error.init = function(root){
 error.log = function(err){
     if (err){
         try{
-            var p = path.join(error.root, 'errors.txt');
+            var p = path.join(error.root, '_errors.txt');
             if (typeof(err) != 'string'){
                 err = JSON.stringify(err);            
             }
@@ -306,8 +345,7 @@ function guard(p) {
     if (p == 'undefined')
         return false;
 
-    if (typeof p != 'string')
-        return false;
+    p = p.toString();
 
     if (p.indexOf('<') != -1)
         return false;
