@@ -125,9 +125,9 @@ balkanDB.prototype.setAutoIncrement = function(dir, json, callback){
         });
 
         json.id = system.last_index_auto_increment;
-        that.set(dir, system.last_index_auto_increment.toString(), json, function(err){
+        that.set(dir, system.last_index_auto_increment.toString(), json, function(err, jsonWithId){
             error.log(err);
-            callback(err);
+            callback(err, jsonWithId);
         });
     });
 };
@@ -162,7 +162,7 @@ balkanDB.prototype.set = function(dir, file, json, callback){
                 fs.writeFile(b.path, b.json, function (err) {
                     error.log(err);
                     if (err) callback(err);
-                    callback(null);
+                    callback(null, b.json);
                 });              
             } 
             else {                
@@ -172,7 +172,7 @@ balkanDB.prototype.set = function(dir, file, json, callback){
                     fs.writeFile(b.path, b.json, function (err) {
                         error.log(err);
                         if (err) callback(err);
-                        callback(null);
+                        callback(null, b.json);
                     });
                 });
             }
