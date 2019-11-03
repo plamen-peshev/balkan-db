@@ -166,11 +166,11 @@ balkanDB.prototype.del = function(dir, file, callback){
 
 
 balkanDB.prototype.list = function(dir, callback){
-    dir = path.join(this.root, dir);
+    var d = path.join(this.root, dir);
 
-    fs.mkdirSync(dir, { recursive: true });
+    fs.mkdirSync(d, { recursive: true });
 
-    fs.readdir(b.dirPath, (err, files) => {
+    fs.readdir(d, (err, files) => {
         error.log(err);
         if (files && Array.isArray(files)){
             for(var i = 0; i < files.length; i++){

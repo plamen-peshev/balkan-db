@@ -261,5 +261,5 @@ var bd = new balkanDB(__dirname, 'db1', 'test');
 //    })
 
 
-bd.list('asd', 'asd123')
+bd.list('asd', function(){})
 
