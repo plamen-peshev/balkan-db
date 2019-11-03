@@ -1,208 +1,142 @@
 
-var fs = require('fs');
-var path = require('path');
+const fs = require('fs');
+const path = require('path');
 
 var balkanDB = function() {
-
-    var p = path.join(arguments[0], arguments[1]);
-    for(var i = 2; i < arguments.length; i++){
-        p = path.join(p, arguments[i]);
+    var root = arguments[0];
+    for(var i = 1; i < arguments.length; i++){
+        var argument = arguments[i];
+        root = path.join(root, argument);
     }
-    this.root = p;
-
-    if (!fs.existsSync(this.root)){
-        fs.mkdirSync(this.root, { recursive: true });
-    }
-
+    this.root = root;
     error.init(this.root);
 };
 
-balkanDB.prototype.get = function(dir, file, callback){
+
+balkanDB.prototype.get = function(dir, file, callback, i){
+    var resultIfArray = [];
     var that = this;
-    if (Array.isArray(file)){
-        var result = [];
-        var errs = [];
-        if (file.length == 0) {
-            callback(null, []);
-            return;
-        } 
-
-        var index = 0;  
+    function _get(dir, file, callback2, i){  
+              
+        var d = path.join(that.root, dir);
+        var f = path.join(d, `${file}.json`);
+        if (i != undefined){            
+            f = path.join(d, `${file[i]}.json`);
+        }    
         
-        for(var i = 0; i < file.length; i++){          
-            (function(_i){
-                var f = file[_i];
-                that._get(dir, f, function(err, data){                    
-                    error.log(err);
-                    if (err) errs[_i] = errs;
-                    result[_i] = data;                    
-
-                    index++;
-
-                    if (index == file.length){
-                        if (errs.length == 0) errs = null;
-                        callback(errs, result);
-                    }
-                });
-            })(i);            
-        }
-    }
-    else{
-        this._get(dir, file, callback);
-    }
-};2
-
-
-balkanDB.prototype._get = function(dir, file, callback){
-    var b = this.build(dir, file);    
-    error.log(b.err);
-    if (b.err){
-        callback(b.err)
-        return;
-    }
-
-    var index = 0;    
-
-    function get(){
-        fs.open(b.path, 'r+', function(err, fd){    
-            if (err && err.code === 'EBUSY'){                
-                index++;
-                if (index == 10){
-                    error.log(err);
-                    clearInterval(interval);
-                    callback('Cannot delete file ' + b.path);                                    
+        fs.mkdirSync(d, { recursive: true });    
+    
+        var rs = fs.createReadStream(f, { flags:'r'});
+    
+        var chunks = null;
+    
+        rs.on('data', function (chunk) { 
+            if (chunks == null) chunks = '';
+            chunks += chunk;
+        });
+    
+        rs.on('error', function (err) { 
+            error.log(err);
+            if (err.code == 'ENOENT'){
+                if (i != undefined){
+                    resultIfArray.push(JSON.parse(chunks));                
+                    i++;  
                 }
-                //do nothing till next loop
-            } 
-            else if (err && err.code === 'ENOENT'){
-                clearInterval(interval);
-                callback(null, null);               
-            } 
-            else {                
-                error.log(err);
-                clearInterval(interval);
-
-                fs.close(fd, function(){
-                    fs.readFile(b.path, function(err, data){
-                        error.log(err);
-                        if (err) callback(err);
-                        var result = null;
-                        if (data != null && data != undefined){
-                            result = JSON.parse(data);
-                        }
-                        callback(null, result);
-                    });
-                });
+                
+                if (i == undefined){    
+                    callback2(null, JSON.parse(chunks));
+                }
+                else if (i != undefined && i < file.length){      
+                    _get(dir, file, callback2, i)                    
+                }
+                else if (i != undefined && i >= file.length){
+                    callback2(null, resultIfArray);
+                }
+            }
+            else{
+                callback2(err);
             }
         });
-    }
+    
+        rs.on('close', function (err) { 
+            error.log(err);
+            if (err){
+                callback2(err);                
+            }
+            else{
+                if (i != undefined){                    
+                    resultIfArray.push(JSON.parse(chunks));                
+                    i++;  
+                }
+                
+                if (i == undefined){    
+                    callback2(null, JSON.parse(chunks));
+                }
+                else if (i != undefined && i < file.length){      
+                    _get(dir, file, callback2, i)                    
+                }
+                else if (i != undefined && i >= file.length){
+                    callback2(null, resultIfArray);
+                }
+            }     
+        });
+    };
 
-    if (fs.existsSync(b.path)){
-        var interval = setInterval(get, 500);
-        get();
+    if (Array.isArray(file)){
+        _get(dir, file, callback, 0);
     }
     else{
-        callback(null, null);                       
+        _get(dir, file, callback);
     }
 };
 
 
-balkanDB.prototype.setAutoIncrement = function(dir, json, callback){
-    var that = this;
-    this.get(dir, '_system', function(err, system){
+
+
+balkanDB.prototype.set = function(dir, file, json, callback){
+    var d = path.join(this.root, dir);
+    var f = path.join(d, `${file}.json`);
+
+    fs.mkdirSync(d, { recursive: true });    
+
+    var ws = fs.createWriteStream(f, { flags:'w'});
+
+    ws.on('error', function (err) {    
         error.log(err);
+        callback(err);
+    });
 
-        if (system == null){
-            system = {
-                last_index_auto_increment: 0
-            }
-        }
+    ws.write(JSON.stringify(json));
 
-        system.last_index_auto_increment++;
+    // ws.on('finish', () => {
+    //     console.log('wrote all data to file');
+    // });
 
-        that.set(dir, '_system', system, function(err){
-            error.log(err);
-        });
-
-        json.id = system.last_index_auto_increment;
-        that.set(dir, system.last_index_auto_increment.toString(), json, function(err, jsonWithId){
-            error.log(err);
-            callback(err, jsonWithId);
-        });
+    ws.end(function(err){
+        error.log(err);
+        error.log(err);
+        callback()
     });
 };
 
-balkanDB.prototype.set = function(dir, file, json, callback){
-    var b = this.build(dir, file, json);
-    error.log(b.err);
-    if (b.err){        
-        callback(b.err)
-        return;
-    }    
-
-    if (!fs.existsSync(b.dirPath)){
-        fs.mkdirSync(b.dirPath);
-    }
-
-    var index = 0;
-
-    function set(){
-        fs.open(b.path, 'r+', function(err, fd){           
-            if (err && err.code === 'EBUSY'){
-                index++;
-                if (index == 10){                    
-                    error.log(err);
-                    clearInterval(interval);
-                    callback('Cannot delete file ' + b.path);                                    
-                }
-                //do nothing till next loop
-            } 
-            else if (err && err.code === 'ENOENT'){
-                clearInterval(interval);
-                fs.writeFile(b.path, b.json, function (err) {
-                    error.log(err);
-                    if (err) callback(err);
-                    callback(null, b.json);
-                });              
-            } 
-            else {                
-                error.log(err);
-                clearInterval(interval);
-                fs.close(fd, function(){
-                    fs.writeFile(b.path, b.json, function (err) {
-                        error.log(err);
-                        if (err) callback(err);
-                        callback(null, b.json);
-                    });
-                });
-            }
-        });
-    }
-    
-    var interval = setInterval(set, 500);
-    set();
-};
-
 balkanDB.prototype.del = function(dir, file, callback){
-    var b = this.build(dir, file);
-    error.log(b.err);
-    if (b.err){
-        callback(b.err)
-        return;
-    }
+    var d = path.join(this.root, dir);
+    var f = path.join(d, `${file}.json`);
 
+    fs.mkdirSync(d, { recursive: true });    
+  
 
     var index = 0;
 
     function del(){
-        fs.open(b.path, 'r+', function(err, fd){
+        fs.open(f, 'r+', function(err, fd){
 
             if (err && err.code === 'EBUSY'){
                 index++;
                 if (index == 10){
                     error.log(err);
                     clearInterval(interval);
-                    callback('Cannot delete file ' + b.path);                                    
+                    callback('Cannot delete file ' + f);                                    
                 }
                 //do nothing till next loop
             } 
@@ -214,7 +148,7 @@ balkanDB.prototype.del = function(dir, file, callback){
                 error.log(err);
                 clearInterval(interval);
                 fs.close(fd, function(){
-                    fs.unlink(b.path, function(err){
+                    fs.unlink(f, function(err){
                         error.log(err);
                         if(err) callback(err);                        
                         callback(null);                        
@@ -224,7 +158,7 @@ balkanDB.prototype.del = function(dir, file, callback){
         });
     }
     
-    if (fs.existsSync(b.path)){        
+    if (fs.existsSync(f)){        
         var interval = setInterval(del, 500);
         del();
     }
@@ -232,82 +166,35 @@ balkanDB.prototype.del = function(dir, file, callback){
 
 
 balkanDB.prototype.list = function(dir, callback){
-    var b = this.build(dir, 'dummy');
-    error.log(b.err);
-    if (b.err){
-        callback(b.err)
-        return;
-    }
+    dir = path.join(this.root, dir);
 
+    fs.mkdirSync(dir, { recursive: true });
 
-    if (fs.existsSync(b.dirPath)){        
-        fs.readdir(b.dirPath, (err, files) => {
-            error.log(err);
-            if (files && Array.isArray(files)){
-                for(var i = 0; i < files.length; i++){
-                    files[i] = files[i].replace('.json', '');
-                }
-                callback(err, files);
+    fs.readdir(b.dirPath, (err, files) => {
+        error.log(err);
+        if (files && Array.isArray(files)){
+            for(var i = 0; i < files.length; i++){
+                files[i] = files[i].replace('.json', '');
             }
-            else{
-                callback(err, []);
-            }
-        });
-    }
-    else{
-        callback(null, []);
-    }
+            callback(err, files);
+        }
+        else{
+            callback(err, []);
+        }
+    });    
 };
 
 
 
 balkanDB.prototype.exist = function(dir, file){
-    var checkOnlyDir = false;
-
-    if (file == undefined){
-        checkOnlyDir = true;
-        file = 'dummy';
-    }
-    
-    var b = this.build(dir, file);
-    error.log(b.err);
-    if (b.err){
-        return false;
-    }
-
-    if (checkOnlyDir){        
-        return fs.existsSync(b.dirPath);
-    }
-    else{
-        return fs.existsSync(b.path);
-    }
+    dir = path.join(this.root, dir);
+    file = path.join(dir, file + '.json');
+    fs.mkdirSync(dir, { recursive: true });
+    return fs.existsSync(file);
 };
 
 
-balkanDB.prototype.build = function(dir, file, json){    
-    if (!guard(dir)){
-        return {
-            err: `The text "${dir}" has invalid characters`
-        }
-    }
 
-    if (!guard(file)){
-        return {
-            err: `The text "${file}" has invalid characters`
-        }
-    }
-
-    dir = dir.toString();
-    file = file.toString();
-
-    return{
-        dir: dir.toLowerCase(),
-        file: file.toLowerCase(),        
-        json: (json != undefined) ? JSON.stringify(json) : null,
-        path: path.join(this.root, dir, `${file}.json`),
-        dirPath: path.join(this.root, dir)
-    }
-};
 
 var error = {};
 error.init = function(root){
@@ -316,6 +203,8 @@ error.init = function(root){
 
 error.log = function(err){
     if (err){
+        fs.mkdirSync(error.root, { recursive: true });    
+
         try{
             var p = path.join(error.root, '_errors.txt');
             if (typeof(err) != 'string'){
@@ -329,53 +218,6 @@ error.log = function(err){
 };
 
 
-function guard(p) {
-    if (p == '')
-        return false;
-        
-    if (p == null)
-        return false;
-            
-    if (p == undefined)
-        return false;
-
-    if (p == 'null')
-        return false;
-            
-    if (p == 'undefined')
-        return false;
-
-    p = p.toString();
-
-    if (p.indexOf('<') != -1)
-        return false;
-
-    if (p.indexOf('>') != -1)
-        return false;
-
-    if (p.indexOf(':') != -1)
-        return false;
-
-    if (p.indexOf('"') != -1)
-        return false;
-    
-    if (p.indexOf('/') != -1)
-        return false;
-
-    if (p.indexOf('\\') != -1)
-        return false;
-
-    if (p.indexOf('|') != -1)
-        return false;        
-        
-    if (p.indexOf('?') != -1)
-        return false;
-    
-    if (p.indexOf('*') != -1)
-        return false;
-
-    return true;
-}
 
 
 module.exports = balkanDB;
